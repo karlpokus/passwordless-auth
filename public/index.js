@@ -1,4 +1,3 @@
-// for later
 var router = {
   URLparser: function(str) {
     var out = {};
@@ -41,17 +40,61 @@ var router = {
   }
 };
 
+function tokenFound() {
+  var tokenInStorage = localStorage.getItem("token"),
+      currentURL = window.location.href,
+      parsedURL = router.URLparser(currentURL);
+  
+  if (tokenInStorage) {
+    return tokenInStorage;
+  } else if (parsedURL.query && parsedURL.query.token) {
+    return parsedURL.query.token;
+  } else {
+    return null;
+  }
+}
+
+function validateToken(token, cb) {
+  $.ajax({
+    type: "POST",
+    url: '/token',
+    data: {token: token},
+    success: function(data){
+      cb(null, data);
+    },
+    error: function(){
+      cb('something blew up!');
+    }
+  });
+}
+
+function init() {
+  var token = tokenFound();
+  
+  if (token) {
+    validateToken(token, function(err, data){
+      if (err) return console.error(err);
+      
+      if (data.ok) {
+        // showSecret with data
+      } else {
+        // showLogin
+      }
+    });
+  } else {
+    // showLogin
+  }
+}
+
 // login/signup
 $('input').on('keyup', function(e){
   if (e.which === 13) {
     e.preventDefault();
     var email = $(this).val();
 
-    console.log(email);
-
     $.ajax({
       type: "POST",
-      url: '/user',
+      url: '/logup',
       data: {email: email},
       success: function(){
         console.log('success');
@@ -64,3 +107,5 @@ $('input').on('keyup', function(e){
 
   }
 });
+
+//init();
