@@ -1,0 +1,27 @@
+{
+  "name": "passwordless-auth",
+  "version": "1.0.0",
+  "description": "a sample",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/karlpokus/passwordless-auth.git"
+  },
+  "keywords": [
+    "passwordless",
+    "authentication"
+  ],
+  "author": "Karl Pokus <karl.pokus@gmail.com> (https://github.com/karlpokus)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/karlpokus/passwordless-auth/issues"
+  },
+  "homepage": "https://github.com/karlpokus/passwordless-auth#readme",
+  "dependencies": {
+    "cryptr": "^2.0.0",
+    "pype-stack": "^0.1.1"
+  }
+}
