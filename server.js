@@ -1,12 +1,14 @@
 var http = require('http'),
+    url = require('url'),
     fs = require('fs'),
     path = require('path'),
-    //users = require('./users'),
     pype = require('pype-stack'),
     dataparser = require('./lib/dataparser'),
+    validateEmail = require('./lib/validateEmail'),
     checkUsername = require('./lib/checkUsername'),
     auth = require('./lib/auth'),
     sendLink = require('./lib/sendLink'),
+    logup = [dataparser, validateEmail, checkUsername, auth.createLoginToken, sendLink],
     server = http.createServer(),
     port = process.env.PORT || 3000,
     errorHandler = function(err, req, res){
@@ -21,21 +23,26 @@ var http = require('http'),
     };
 
 server.on('request', function(req, res){
-    // home && js
-    if (req.url === '/' || req.url === '/public/index.js') {
-      send(req.url, res);
-    }
-    // token
-    if (req.method === 'POST' && req.url === '/token') {
-      // validate token
-    }
-    // login/signup
-    if (req.method === 'POST' && req.url === '/logup') {
-      pype(null, [dataparser, checkUsername, auth.createToken, sendLink], errorHandler, function(req, res){
-        //console.log(req.data);
-        res.end();
-      })(req, res);
-    }
+  var pathname = url.parse(req.url).pathname;
+    
+  // home && js
+  if (pathname === '/' || pathname === '/public/index.js') {
+    send(req.url, res);
+  }
+  // login/signup
+  if (req.method === 'POST' && req.url === '/logup') {
+    pype(null, logup, errorHandler, function(req, res){
+      res.end();
+    })(req, res);
+  }
+  // accessToken in localstorage
+  if (req.method === 'POST' && pathname === '/accessToken') {
+    // validate token
+  }
+  // loginToken in URL
+  if (req.method === 'POST' && pathname === '/loginToken') {
+    // validate
+  }
 });
 
 server.listen(port, function(){
