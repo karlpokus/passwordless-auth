@@ -1,26 +1,32 @@
+// cloud9 error muting fix
+/* global $, history, localStorage */
+
 var router = {
   routes: {},
   add: function(path) {
     this.routes[path] = Array.prototype.slice.call(arguments, 1);
   },
-  go: function(path, update) {
+  updateURL: function(path) {
+    if (window.location.pathname !== path) {
+      history.pushState({}, "", path);
+    }
+  },
+  go: function(path, update, o) {
     if (update) {
       history.pushState({}, "", path);
     }
     if (this.routes[path]) {
-      var data = {},
+      var data = o || {},
           stack = this.routes[path];
-      
-      // add errorhandler here instead of binding
-      
-      pype(data, stack);
+          
+      pype(data, stack, console.error);
     }
   }
 };
 
-function URLparser(data, next) {
+function URLparser(data, next) { // redundant?
   data.url = {
-    path = window.location.pathname
+    path: window.location.pathname
   };
 
   if (window.location.search) {      
@@ -39,9 +45,8 @@ function URLparser(data, next) {
   return next();
 }
 
-function pype(errorHandler, data) {
+function pype(data, stack, errorHandler) {
   var i = 0,
-      stack = Array.prototype.slice.call(arguments, 2),
       run = function() {
         stack[i++](data, next);
       },
@@ -55,13 +60,9 @@ function pype(errorHandler, data) {
         }
       }
   run();
-}
+};
 
-pype = pype.bind(null, function(err){
-  console.error(err);
-});
-
-function validateTokenInStorage(data, next) {
+function validateAccessToken(data, next) {
   var token = localStorage.getItem("access_token");
   if (token) {
     $.ajax({
@@ -69,11 +70,11 @@ function validateTokenInStorage(data, next) {
       url: '/accessToken',
       data: {token: token},
       success: function(data){
-        data.data = data;
+        data.secret = data;
         next();
       },
       error: function(){
-        next();
+        next('ajax error');
       }
     });
   } else {
@@ -82,59 +83,51 @@ function validateTokenInStorage(data, next) {
 }
 
 function renderView(data, next) {
-  if (data.data) {
-    console.log('render secret view w data');
+  var str;
+  if (data.secret) {
+    str = '<p>' + data.secret + '</p>';
+    router.updateURL('/user');
+    
+  } else if (data.url) {
+    str = "<a href=" + data.url + ">" + data.url + '</a>';
+    
   } else {
-    console.log('render login/signup');
+    str = '<input type="email" placeholder="e-mail">';
+    router.updateURL('/');
   }
+  $('.content').empty().html(str);
 }
 
-function validateTokenInURL(data, next) {
-  if (data.url.query && data.url.query.token) {
-    $.ajax({
-      type: "POST",
-      url: '/loginToken',
-      data: {token: data.url.query.token},
-      success: function(data){
-        data.data = data;
-        next();
-      },
-      error: function(){
-        next();
-      }
-    });
-  } else {
-    next();
-  }
+function login(data, next) {
+  $.ajax({
+    type: "POST",
+    url: '/login',
+    data: data,
+    success: function(url){
+      data.url = url;
+      next();
+    },
+    error: function(){
+      next('ajax error');
+    }
+  });
 }
 
 function init() {
-  router.add('/', validateTokenInStorage, renderView);
-  router.add('/user', validateTokenInStorage, renderView);
-  router.add('/token', URLparser, validateTokenInURL); // savetoken, removeTokenFromURL, renderView
+  router.add('/', validateAccessToken, renderView);
+  router.add('/user', validateAccessToken, renderView);
+  router.add('/login', login, renderView);
   router.go(window.location.pathname, true);
 }
 
-// login/signup
-$('input').on('keyup', function(e){
+init();
+
+// EVENT - login
+
+$('body').on('keyup', 'input', function(e){
   if (e.which === 13) {
     e.preventDefault();
     var email = $(this).val();
-
-    $.ajax({
-      type: "POST",
-      url: '/logup',
-      data: {email: email},
-      success: function(){
-        console.log('success');
-      },
-      error: function(){
-        console.error('error');
-      }
-    });
-
-
+    router.go('/login', true, {user: email});
   }
 });
-
-//init();
