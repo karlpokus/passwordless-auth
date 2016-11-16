@@ -1,50 +1,45 @@
-var http = require('http'),
-    url = require('url'),
-    fs = require('fs'),
-    path = require('path'),
-    pype = require('pype-stack'),
-    dataparser = require('./lib/dataparser'),
-    validateEmail = require('./lib/validateEmail'),
-    checkUsername = require('./lib/checkUsername'),
-    auth = require('./lib/auth'),
-    sendLink = require('./lib/sendLink'),
-    logup = [dataparser, validateEmail, checkUsername, auth.createLoginToken, sendLink],
-    server = http.createServer(),
+var express = require('express'),
+    app = express(),
     port = process.env.PORT || 3000,
-    errorHandler = function(err, req, res){
-      console.error(err);
-      res.end('Server error');
-    },
-    send = function(file, res){
-      file = (file === '/')? 'public/index.html': file;
-      var filePath = path.join(__dirname, file);
-      fs.createReadStream(filePath)
-        .pipe(res);
+    dataparser = require('./lib/dataparser'),
+    auth = require('./lib/auth'),
+    sendTheBasics = function(res){
+      res.sendFile(__dirname + '/public/index.html');
     };
 
-server.on('request', function(req, res){
-  var pathname = url.parse(req.url).pathname;
+app.use(express.static('public'))
+
+app.get('/', function (req, res) {
+  sendTheBasics(res);
+});
+
+app.get('/user', function (req, res) {
+  sendTheBasics(res);
+});
+
+// NOT DONE
+app.post('/accessToken', dataparser, function(req, res, next){
+  console.log(req.data);
+  res.end('hi');
+});
+
+// DONE!
+app.post('/login', dataparser, auth.createLoginToken, function(req, res){
+  var url = 'https://hej-node-karlpokus.c9users.io/loginToken?loginToken=' + req.loginToken;
+  res.end(url);
+});
+
+// WIP!
+app.get('/loginToken', dataparser, auth.verifyLoginToken, auth.createAccessToken, function(req, res){
+  if (req.accessToken) {
+    //res.end(req.accessToken); // wat?
+    // res.redirect(200, '/');
     
-  // home && js
-  if (pathname === '/' || pathname === '/public/index.js') {
-    send(req.url, res);
-  }
-  // login/signup
-  if (req.method === 'POST' && req.url === '/logup') {
-    pype(null, logup, errorHandler, function(req, res){
-      res.end();
-    })(req, res);
-  }
-  // accessToken in localstorage
-  if (req.method === 'POST' && pathname === '/accessToken') {
-    // validate token
-  }
-  // loginToken in URL
-  if (req.method === 'POST' && pathname === '/loginToken') {
-    // validate
+  } else {
+    res.redirect(401, '/');
   }
 });
 
-server.listen(port, function(){
+app.listen(port, function () {
   console.log('Server running..');
 });
