@@ -1,43 +1,36 @@
 var express = require('express'),
     app = express(),
     port = process.env.PORT || 3000,
+    root = 'localhost:3000' // https://hej-node-karlpokus.c9users.io
     dataparser = require('./lib/dataparser'),
     auth = require('./lib/auth'),
-    sendTheBasics = function(res){
+    sendTheBasics = function(req, res){
       res.sendFile(__dirname + '/public/index.html');
     };
 
 app.use(express.static('public'))
 
-app.get('/', function (req, res) {
-  sendTheBasics(res);
-});
+app.get('/', sendTheBasics);
+app.get('/user', sendTheBasics);
+app.get('/loginToken', sendTheBasics);
 
-app.get('/user', function (req, res) {
-  sendTheBasics(res);
-});
-
-// NOT DONE
-app.post('/accessToken', dataparser, function(req, res, next){
-  console.log(req.data);
-  res.end('hi');
-});
-
-// DONE!
+// Trade e-mail for loginURL
 app.post('/login', dataparser, auth.createLoginToken, function(req, res){
-  var url = 'https://hej-node-karlpokus.c9users.io/loginToken?loginToken=' + req.loginToken;
+  var url = '/loginToken?loginToken=' + req.loginToken; // exclude root on localhost
   res.end(url);
 });
 
-// WIP!
-app.get('/loginToken', dataparser, auth.verifyLoginToken, auth.createAccessToken, function(req, res){
-  if (req.accessToken) {
-    //res.end(req.accessToken); // wat?
-    // res.redirect(200, '/');
-    
-  } else {
-    res.redirect(401, '/');
-  }
+// Trade loginToken for accessToken
+app.post('/accessToken', dataparser, auth.verifyLoginToken, auth.createAccessToken, function(req, res, next){
+  res.end(req.accessToken);
+});
+
+// Trade accessToken for secret
+app.post('/secret', dataparser, auth.verifyAccessToken, function(req, res){
+  res.end(JSON.stringify({
+    ok: req.authenticated,
+    secret: (req.authenticated)? 'bob is awesome': null
+  }));
 });
 
 app.listen(port, function () {
