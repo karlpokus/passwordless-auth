@@ -18,18 +18,18 @@ var router = {
     if (this.routes[path]) {
       var data = o || {},
           stack = this.routes[path];
-          
+
       pype(data, stack, console.error);
     }
   }
 };
 
-function URLparser(data, next) { // redundant?
+function URLparser(data, next) {
   data.url = {
     path: window.location.pathname
   };
 
-  if (window.location.search) {      
+  if (window.location.search) {
     data.url.query = window.location.search.substr(1)
       .split('&')
       .reduce(function(base, str){
@@ -62,16 +62,21 @@ function pype(data, stack, errorHandler) {
   run();
 };
 
-function validateAccessToken(data, next) {
-  var token = localStorage.getItem("access_token");
+function tradeAccessTokenForSecret(data, next) {
+  var token = localStorage.getItem("accessToken");
   if (token) {
     $.ajax({
       type: "POST",
-      url: '/accessToken',
+      url: '/secret',
       data: {token: token},
-      success: function(data){
-        data.secret = data;
-        next();
+      success: function(res){
+        var authObj = JSON.parse(res);
+        if (authObj.ok) {
+          data.secret = authObj.secret;
+          next();
+        } else {
+          next('Unauthorized');
+        }        
       },
       error: function(){
         next('ajax error');
@@ -82,15 +87,40 @@ function validateAccessToken(data, next) {
   }
 }
 
+function tradeLoginTokenForAccessToken(data, next) {
+  var token = data.url.query.loginToken;
+  if (token) {
+    $.ajax({
+      type: "POST",
+      url: '/accessToken',
+      data: {token: token},
+      success: function(res){
+        data.accessToken = res;
+        next();
+      },
+      error: function(){
+        next('ajax error');
+      }
+    });
+  } else {
+    next('loginToken missing');
+  }
+}
+
+function saveAccessToken(data, next) {
+  localStorage.setItem("accessToken", data.accessToken);
+  next();
+}
+
 function renderView(data, next) {
   var str;
   if (data.secret) {
     str = '<p>' + data.secret + '</p>';
     router.updateURL('/user');
-    
+
   } else if (data.url) {
     str = "<a href=" + data.url + ">" + data.url + '</a>';
-    
+
   } else {
     str = '<input type="email" placeholder="e-mail">';
     router.updateURL('/');
@@ -114,10 +144,18 @@ function login(data, next) {
 }
 
 function init() {
-  router.add('/', validateAccessToken, renderView);
-  router.add('/user', validateAccessToken, renderView);
+  router.add('/', tradeAccessTokenForSecret, renderView);
+  router.add('/user', tradeAccessTokenForSecret, renderView);
   router.add('/login', login, renderView);
-  router.go(window.location.pathname, true);
+
+  router.add('/loginToken',
+    URLparser,
+    tradeLoginTokenForAccessToken,
+    saveAccessToken,
+    tradeAccessTokenForSecret,
+    renderView);
+
+  router.go(window.location.pathname, false);
 }
 
 init();
@@ -128,6 +166,6 @@ $('body').on('keyup', 'input', function(e){
   if (e.which === 13) {
     e.preventDefault();
     var email = $(this).val();
-    router.go('/login', true, {user: email});
+    router.go('/login', false, {user: email});
   }
 });
