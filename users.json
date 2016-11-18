@@ -1,1 +1,4 @@
-["bob@example.com"]
+[
+  "bob@example.com",
+  "foo@gmail.com"
+]

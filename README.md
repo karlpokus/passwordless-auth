@@ -13,6 +13,11 @@ A prototype implementation. Login without a password. Trade transient loginToken
 - sits in localStorage
 - contains user
 
+# Tests
+```
+$ npm test
+```
+
 # TODOs
 - [x] check accessToken on load
 - [x] trade accessToken for secret
@@ -20,6 +25,10 @@ A prototype implementation. Login without a password. Trade transient loginToken
 - [ ] send loginToken via e-mail
 - [ ] re-route instead of showing errors on client
 - [ ] fix router
+- [x] only accept login from known users
+- [x] proper error handling - server and client
+- [ ] `auth.createAccessToken`needs a failure route
+- [ ] `auth.decryptAccessToken` needs a try catch block
 
 # licence
 MIT
