@@ -70,16 +70,11 @@ function tradeAccessTokenForSecret(data, next) {
       url: '/secret',
       data: {token: token},
       success: function(res){
-        var authObj = JSON.parse(res);
-        if (authObj.ok) {
-          data.secret = authObj.secret;
-          next();
-        } else {
-          next('Unauthorized');
-        }        
+        data.secret = res;
+        next();
       },
-      error: function(){
-        next('ajax error');
+      error: function(err){
+        next(err.responseText || err.statusText);
       }
     });
   } else {
@@ -98,8 +93,8 @@ function tradeLoginTokenForAccessToken(data, next) {
         data.accessToken = res;
         next();
       },
-      error: function(){
-        next('ajax error');
+      error: function(err){
+        next(err.responseText || err.statusText);
       }
     });
   } else {
@@ -137,8 +132,8 @@ function login(data, next) {
       data.url = url;
       next();
     },
-    error: function(){
-      next('ajax error');
+    error: function(err){
+      next(err.responseText || err.statusText);
     }
   });
 }
