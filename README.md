@@ -22,13 +22,15 @@ $ npm test
 - [x] check accessToken on load
 - [x] trade accessToken for secret
 - [x] trade loginToken for persistant accessToken
-- [ ] send loginToken via e-mail
+- [x] send loginToken via e-mail
 - [ ] re-route instead of showing errors on client
-- [ ] fix router
+- [ ] fix router methods
 - [x] only accept login from known users
 - [x] proper error handling - server and client
-- [ ] `auth.createAccessToken`needs a failure route
-- [ ] `auth.decryptAccessToken` needs a try catch block
+- [x] `auth.createAccessToken` needs a failure route
+- [ ] `auth.verifyLoginToken` and `auth.decryptAccessToken` needs try catch block
+- [ ] remove invalid accessToken
+- [x] add 404 route
 
 # licence
 MIT

@@ -113,8 +113,8 @@ function renderView(data, next) {
     str = '<p>' + data.secret + '</p>';
     router.updateURL('/user');
 
-  } else if (data.url) {
-    str = "<a href=" + data.url + ">" + data.url + '</a>';
+  } else if (data.feedback) {
+    str = "<p>" + data.feedback + "</p>";
 
   } else {
     str = '<input type="email" placeholder="e-mail">';
@@ -128,8 +128,8 @@ function login(data, next) {
     type: "POST",
     url: '/login',
     data: data,
-    success: function(url){
-      data.url = url;
+    success: function(str){
+      data.feedback = str;
       next();
     },
     error: function(err){
