@@ -11,19 +11,45 @@ var router = {
       history.pushState({}, "", path);
     }
   },
+  parseURL: function(data, next) {
+    data.url = {
+      path: window.location.pathname
+    };
+  
+    if (window.location.search) {
+      data.url.query = window.location.search.substr(1)
+        .split('&')
+        .reduce(function(base, str){
+          var minorParts = str.split('='),
+            k = minorParts[0],
+            v = minorParts[1];
+          base[k] = v;
+          return base;
+      }, {});
+    } else {
+      data.url.query = {};
+    }
+    return next();
+  },
   go: function(path, update, o) {
     if (update) {
       history.pushState({}, "", path);
     }
     if (this.routes[path]) {
       var data = o || {},
-          stack = this.routes[path];
+          //stack = this.routes[path],
+          stack = [this.parseURL].concat(this.routes[path]),
+          errorHandler = function(err) {
+            console.error(err);
+            router.go('/', true);
+          };
 
-      pype(data, stack, console.error);
+      pype(data, stack, errorHandler);
     }
   }
 };
 
+/*
 function URLparser(data, next) {
   data.url = {
     path: window.location.pathname
@@ -40,10 +66,11 @@ function URLparser(data, next) {
         return base;
     }, {});
   } else {
-    data.url.query = null;
+    data.url.query = {};
   }
   return next();
 }
+*/
 
 function pype(data, stack, errorHandler) {
   var i = 0,
@@ -73,8 +100,9 @@ function tradeAccessTokenForSecret(data, next) {
         data.secret = res;
         next();
       },
-      error: function(err){
-        next(err.responseText || err.statusText);
+      error: function() {
+        localStorage.removeItem("accessToken");
+        next();
       }
     });
   } else {
@@ -98,7 +126,7 @@ function tradeLoginTokenForAccessToken(data, next) {
       }
     });
   } else {
-    next('loginToken missing');
+    next('loginToken missing from url');
   }
 }
 
@@ -127,7 +155,7 @@ function login(data, next) {
   $.ajax({
     type: "POST",
     url: '/login',
-    data: data,
+    data: {user: data.user},
     success: function(str){
       data.feedback = str;
       next();
@@ -144,10 +172,10 @@ function init() {
   router.add('/login', login, renderView);
 
   router.add('/loginToken',
-    URLparser,
+    //URLparser,
     tradeLoginTokenForAccessToken,
     saveAccessToken,
-    tradeAccessTokenForSecret,
+    tradeAccessTokenForSecret, // router.go('/user', true) here?
     renderView);
 
   router.go(window.location.pathname, false);
