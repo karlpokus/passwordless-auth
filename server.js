@@ -23,7 +23,14 @@ app.get('/loginToken', sendTheBasics);
 app.post('/login', dataparser, checkUser, auth.createLoginToken, sendLink);
 
 // Trade loginToken for accessToken
-app.post('/accessToken', dataparser, auth.verifyLoginToken, auth.createAccessToken);
+app.post('/accessToken',
+  dataparser,
+  auth.verifyLoginToken,
+  checkUser,
+  auth.createAccessToken,
+  function(req, res){
+    res.end(req.accessToken);
+});
 
 // Trade accessToken for secret
 app.post('/secret', dataparser, auth.decryptAccessToken, checkUser, function(req, res){
