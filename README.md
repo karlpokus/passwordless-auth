@@ -1,5 +1,10 @@
 # passwordless-auth
-A prototype implementation. Login without a password. Trade transient loginToken for persistant accessToken.
+Login with only your e-mail. A prototype implementation. Trade transient loginToken for persistant accessToken.
+
+# Requirements
+- [x] log in without a password
+- [x] stay logged in via persistant token on page reloads
+- [ ] user reply to e-mail if login does not work
 
 ### loginToken
 - expires in [n] min
